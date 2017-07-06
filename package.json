@@ -1,0 +1,28 @@
+{
+  "name": "uniwue-lernplaetze-scraper",
+  "version": "0.1.0",
+  "description": "Scraper daemon to monitor the occupancy rate of study working spaces in the libraries of the University of Würzburg, Germany.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fnogatz/uniwue-lernplaetze-scraper"
+  },
+  "scripts": {
+    "standard": "standard",
+    "test": "npm run standard",
+    "clean-data": "rm -r data/*"
+  },
+  "keywords": [
+    "uniwue"
+  ],
+  "author": "Falco Nogatz <fnogatz@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "standard": "^10.0.2"
+  },
+  "dependencies": {
+    "mkdirp": "^0.5.1",
+    "read-last-lines": "^1.2.0",
+    "scrape-it": "^3.3.2"
+  }
+}
