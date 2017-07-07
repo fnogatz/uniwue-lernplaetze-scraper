@@ -1,6 +1,6 @@
 {
   "name": "uniwue-lernplaetze-scraper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scraper daemon to monitor the occupancy rate of study working spaces in the libraries of the University of Würzburg, Germany.",
   "main": "index.js",
   "repository": {
