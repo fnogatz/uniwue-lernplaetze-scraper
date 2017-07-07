@@ -10,7 +10,8 @@ var URL = 'https://www2.bibliothek.uni-wuerzburg.de/UB-Infos/standort_auslastung
 var URLBASE = new Url(URL).origin
 var DATADIR = path.join(__dirname, 'data')
 
-var DATE = new Date().toJSON().slice(0, 10)
+var dateParts = new Date().toLocaleString('de', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Berlin' }).split('/')
+var DATE = dateParts[2] + '-' + dateParts[0] + '-' + dateParts[1]
 
 scrapeIt(URL, {
   items: {
