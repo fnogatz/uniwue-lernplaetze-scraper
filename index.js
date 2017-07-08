@@ -57,42 +57,35 @@ scrapeIt(URL, {
 
       var filename = path.join(dataDir, DATE + '.csv')
 
-      lastLine(filename).then(lastEntry => {
+      lastLines.read(filename, 2).then(lines => {
+        lines = lines.split('\n')
+
+        var preLastEntry = false
+        if (lines[0][0] !== '#') {
+          preLastEntry = lines[0]
+        }
+
+        var lastEntry = lines[1]
+
         getOccupancy(occupancyUrl).then(function (occupancy) {
+          occupancy.time = '22:53'
+          occupancy.percentage = '95'
+          var data = occupancy.time + ',' + occupancy.percentage + '\n'
+
           if (lastEntry.split(',')[0] === occupancy.time) {
             // no new entry
             return
           }
+          if (preLastEntry && preLastEntry.split(',')[0] !== 'closed' && lastEntry.split(',')[0] === 'closed') {
+            // delete preLastLine
+            return writeNewFile(filename, item, occupancy)()
+          }
 
-          var data = occupancy.time + ',' + occupancy.percentage + '\n'
           fs.appendFile(filename, data, function (err) {
             if (err) throw err
           })
         })
-      }).catch(function () {
-        var data = []
-        // file does not exist
-        // add file header first
-        data.push('# ' + item.id + ' - ' + item.name + ' (' + item.capacity + ')')
-
-        var openingTimesUrl = URLBASE + item.openingTimesLink
-
-        scrapeIt(openingTimesUrl, {
-          times: {
-            selector: 'span',
-            convert: text => text.replace(/^.* ([0-9]+:[0-9]+) .* ([0-9]+:[0-9]+).*$/, '$1 - $2')
-          }
-        }).then(open => {
-          data.push('# ' + open.times)
-
-          return getOccupancy(occupancyUrl)
-        }).then(function (occupancy) {
-          data.push(occupancy.time + ',' + occupancy.percentage)
-          fs.appendFile(filename, data.join('\n') + '\n', function (err) {
-            if (err) throw err
-          })
-        })
-      })
+      }).catch(writeNewFile(filename, item, occupancyUrl))
     })
   })
 })
@@ -110,6 +103,33 @@ function getOccupancy (url) {
   })
 }
 
-function lastLine (filename) {
-  return lastLines.read(filename, 1)
+function writeNewFile (filename, item, occupancyUrl) {
+  return function () {
+    var data = []
+    // file does not exist
+    // add file header first
+    data.push('# ' + item.id + ' - ' + item.name + ' (' + item.capacity + ')')
+
+    var openingTimesUrl = URLBASE + item.openingTimesLink
+
+    scrapeIt(openingTimesUrl, {
+      times: {
+        selector: 'span',
+        convert: text => text.replace(/^.* ([0-9]+:[0-9]+) .* ([0-9]+:[0-9]+).*$/, '$1 - $2')
+      }
+    }).then(open => {
+      data.push('# ' + open.times)
+
+      if (typeof occupancyUrl === 'object') {
+        return Promise.resolve(occupancyUrl)
+      }
+
+      return getOccupancy(occupancyUrl)
+    }).then(function (occupancy) {
+      data.push(occupancy.time + ',' + occupancy.percentage)
+      fs.writeFile(filename, data.join('\n') + '\n', function (err) {
+        if (err) throw err
+      })
+    })
+  }
 }
