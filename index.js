@@ -68,8 +68,6 @@ scrapeIt(URL, {
         var lastEntry = lines[1]
 
         getOccupancy(occupancyUrl).then(function (occupancy) {
-          occupancy.time = '22:53'
-          occupancy.percentage = '95'
           var data = occupancy.time + ',' + occupancy.percentage + '\n'
 
           if (lastEntry.split(',')[0] === occupancy.time) {
