@@ -10,4 +10,12 @@ The rates are collected from the university's official [online overview](https:/
 <time>,<occupancy-rate>
 ```
 
-The first time the CSV is created, the meta data is generated as comments. All following data entries of the form `<time>,<occupancy-rate>` are added at the end. The `<time>` is of the format `HH:MM`, the `<occupancy-rate>` is saved as a percentage. The university currently returns one of `10`, `20`, ..., `100`. The data are updated irregularly, so the script stores a new value only after updates. It is intended to be used in a cronjob.
+The first time the CSV is created, the meta data is generated as comments. All following data entries of the form `<time>,<occupancy-rate>` are added at the end. The `<time>` is of the format `HH:MM`, the `<occupancy-rate>` is saved as a percentage. The university currently returns one of `10`, `20`, ..., `100`. The data are updated irregularly, so the script stores a new value only after updates.
+
+The script is intended to be used in a cronjob. Since the meta-data provided by the [online overview](https://www2.bibliothek.uni-wuerzburg.de/UB-Infos/standort_auslastung_en.phtml) is not updated exactly at midnight, we suggest using the following crontab entry:
+
+```crontab
+* 6-23 * * * node index.js
+```
+
+There is currently not a single library which is longer open than midnight.
