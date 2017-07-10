@@ -29,7 +29,8 @@ scrapeIt(URL, {
         }
       },
       name: {
-        selector: '.tcell-m a'
+        selector: '.tcell-m a',
+        convert: text => text.replace(/Room booking system$/, '')
       },
       capacity: {
         selector: '.tcell-m li',
