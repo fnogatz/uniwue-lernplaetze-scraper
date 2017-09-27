@@ -20,13 +20,7 @@ scrapeIt(URL, {
       id: {
         selector: '.tcell-m a',
         attr: 'href',
-        convert: link => {
-          if (link === 'http://www.bibliothek.uni-wuerzburg.de/ub_infos/oeffnungszeiten/') {
-            return '000'
-          }
-
-          return link.replace(/^.*=([0-9]+)$/, '$1')
-        }
+        convert: link => link.replace(/^.*bib=(.*)$/, '$1')
       },
       name: {
         selector: '.tcell-m a',
