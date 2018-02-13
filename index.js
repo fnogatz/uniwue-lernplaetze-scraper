@@ -5,37 +5,37 @@ var Url = require('url').URL
 var scrapeIt = require('scrape-it')
 var mkdirp = require('mkdirp')
 var lastLines = require('read-last-lines')
+var yyyymmdd = require('yyyy-mm-dd')
 
 var URL = 'https://www2.bibliothek.uni-wuerzburg.de/UB-Infos/standort_auslastung_en.phtml'
 var URLBASE = new Url(URL).origin
 var DATADIR = path.join(__dirname, 'data')
 
-var dateParts = new Date().toLocaleString('de', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Europe/Berlin' }).split('/')
-var DATE = dateParts[2] + '-' + dateParts[0] + '-' + dateParts[1]
+var DATE = yyyymmdd()
 
 scrapeIt(URL, {
   items: {
-    listItem: '.table .trow',
+    listItem: 'table tbody tr.ub',
     data: {
       id: {
-        selector: '.tcell-m a',
+        selector: 'td a',
         attr: 'href',
         convert: link => link.replace(/^.*bib=(.*)$/, '$1')
       },
       name: {
-        selector: '.tcell-m a',
+        selector: 'td a:first-child',
         convert: text => text.replace(/Room booking system$/, '')
       },
       capacity: {
-        selector: '.tcell-m li',
+        selector: 'td li',
         convert: text => text.replace(/^[\s\S]* ([0-9]+) seats[\s\S]*$/, '$1')
       },
       occupancyLink: {
-        selector: '.tcell-l iframe',
+        selector: 'td:first-child iframe',
         attr: 'src'
       },
       openingTimesLink: {
-        selector: '.tcell-m iframe',
+        selector: 'td ol iframe',
         attr: 'src'
       }
     }
