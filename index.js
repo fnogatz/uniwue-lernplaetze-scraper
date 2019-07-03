@@ -1,6 +1,5 @@
 var path = require('path')
 var fs = require('fs')
-var Url = require('url').URL
 
 var scrapeIt = require('scrape-it')
 var mkdirp = require('mkdirp')
@@ -8,14 +7,14 @@ var lastLines = require('read-last-lines')
 var yyyymmdd = require('yyyy-mm-dd')
 
 var URL = 'https://www2.bibliothek.uni-wuerzburg.de/UB-Infos/standort_auslastung_en.phtml'
-var URLBASE = new Url(URL).origin
 var DATADIR = path.join(__dirname, 'data')
 
 var DATE = yyyymmdd()
+var OCCUPANCY_REGEX = /^ca\. ([0-9]+) % \(([0-9]+:[0-9]+)\)$/
 
 scrapeIt(URL, {
   items: {
-    listItem: 'table tbody tr.ub',
+    listItem: '#content table tbody tr',
     data: {
       id: {
         selector: 'td a',
@@ -30,20 +29,23 @@ scrapeIt(URL, {
         selector: 'td li',
         convert: text => text.replace(/^[\s\S]* ([0-9]+) seats[\s\S]*$/, '$1')
       },
-      occupancyLink: {
-        selector: 'td:first-child iframe',
-        attr: 'src'
+      occupancy: {
+        selector: 'td span.kreisinfo',
+        convert: text => text.replace(OCCUPANCY_REGEX, '$1')
       },
-      openingTimesLink: {
-        selector: 'td ol iframe',
-        attr: 'src'
+      occupancyTime: {
+        selector: 'td span.kreisinfo',
+        convert: text => text.replace(OCCUPANCY_REGEX, '$2')
+      },
+      times: {
+        selector: 'td span.info',
+        convert: text => text.replace(/^.* ([0-9]+:[0-9]+) .* ([0-9]+:[0-9]+).*$/, '$1 - $2')
       }
     }
   }
 }).then(overview => {
   overview.items.forEach(function (item) {
     var dataDir = path.join(DATADIR, item.id)
-    var occupancyUrl = URLBASE + item.occupancyLink
 
     mkdirp(dataDir, function (err) {
       if (err) {
@@ -62,67 +64,36 @@ scrapeIt(URL, {
 
         var lastEntry = lines[1]
 
-        getOccupancy(occupancyUrl).then(function (occupancy) {
-          var data = occupancy.time + ',' + occupancy.percentage + '\n'
+        var data = item.occupancyTime + ',' + item.occupancy + '\n'
 
-          if (lastEntry.split(',')[0] === occupancy.time) {
-            // no new entry
-            return
-          }
-          if (preLastEntry && preLastEntry.split(',')[0] !== 'closed' && lastEntry.split(',')[0] === 'closed') {
-            // delete preLastLine
-            return writeNewFile(filename, item, occupancy)()
-          }
+        if (lastEntry.split(',')[0] === item.occupancyTime) {
+          // no new entry
+          return
+        }
+        if (preLastEntry && preLastEntry.split(',')[0] !== 'closed' && lastEntry.split(',')[0] === 'closed') {
+          // delete preLastLine
+          return writeNewFile(filename, item)()
+        }
 
-          fs.appendFile(filename, data, function (err) {
-            if (err) throw err
-          })
+        fs.appendFile(filename, data, function (err) {
+          if (err) throw err
         })
-      }).catch(writeNewFile(filename, item, occupancyUrl))
+      }).catch(writeNewFile(filename, item))
     })
   })
 })
 
-function getOccupancy (url) {
-  return scrapeIt(url, {
-    percentage: {
-      selector: 'span.info',
-      convert: text => text.replace(/^.* ([0-9]+) %.*$/, '$1')
-    },
-    time: {
-      selector: 'span.info',
-      convert: text => text.replace(/^.*\(([0-9]+:[0-9]+)\).*$/, '$1')
-    }
-  })
-}
-
-function writeNewFile (filename, item, occupancyUrl) {
+function writeNewFile (filename, item) {
   return function () {
     var data = []
     // file does not exist
     // add file header first
     data.push('# ' + item.id + ' - ' + item.name + ' (' + item.capacity + ')')
+    data.push('# ' + item.times)
+    data.push(item.occupancyTime + ',' + item.occupancy)
 
-    var openingTimesUrl = URLBASE + item.openingTimesLink
-
-    scrapeIt(openingTimesUrl, {
-      times: {
-        selector: 'span',
-        convert: text => text.replace(/^.* ([0-9]+:[0-9]+) .* ([0-9]+:[0-9]+).*$/, '$1 - $2')
-      }
-    }).then(open => {
-      data.push('# ' + open.times)
-
-      if (typeof occupancyUrl === 'object') {
-        return Promise.resolve(occupancyUrl)
-      }
-
-      return getOccupancy(occupancyUrl)
-    }).then(function (occupancy) {
-      data.push(occupancy.time + ',' + occupancy.percentage)
-      fs.writeFile(filename, data.join('\n') + '\n', function (err) {
-        if (err) throw err
-      })
+    fs.writeFile(filename, data.join('\n') + '\n', function (err) {
+      if (err) throw err
     })
   }
 }
