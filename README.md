@@ -19,3 +19,7 @@ The script is intended to be used in a cronjob. Since the meta-data provided by 
 ```
 
 There is currently not a single library which is longer open than midnight.
+
+## Public Archive
+
+This script has been used since September 2017. A public archive of all records since then can be downloaded from [https://nogatz.net/uniwue-library.tar.gz](https://nogatz.net/uniwue-library.tar.gz).
